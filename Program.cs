@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Xunit;
+
 
 namespace RockPaperScissors
 {
@@ -15,107 +17,132 @@ namespace RockPaperScissors
         Paper,
         Scissors
     }
-
     interface IPlayer
     {
-        string name { get; set; }
-        RPSChoice choice { get; set; }
-        void GetChoice();
-    }
-    class Human : IPlayer
-    {
-        public string name { get; set; }
-        public RPSChoice choice { get; set; }
-        public void GetChoice()
-        {
-            UI.DisplayChoices();
-            while (true)
-            {
-                string input = UI.GetUserInput("");
-                if (Enum.TryParse<RPSChoice>(input, out RPSChoice result))
-                {
-                    choice = result;
-                    break;
-                }
-                UI.DisplayInvalidChoice();
-            }
-        }
-    }
-    class Computer : IPlayer
-    {
-        public string name { get; set; }
-        public RPSChoice choice { get; set; }
-        public void GetChoice()
-        {
-            Random rnd = new Random();
-            choice = (RPSChoice)rnd.Next(0, 3);
-        }
-    }
-    class UI
-    {
-        public static void DisplayMessage(string message)
-        {
-            Console.WriteLine(message);
-        }
+        string Name { get; set; }
+        RPSChoice Choice { get; set; }
+        int Score { get; set; }
 
-        public static string GetUserInput(string prompt)
-        {
-            Console.Write(prompt);
-            return Console.ReadLine();
-        }
-
-        public static void DisplayChoices()
-        {
-            Console.WriteLine("Enter your choice (Rock, Paper, or Scissors): ");
-        }
-
-        public static void DisplayInvalidChoice()
-        {
-            Console.WriteLine("Invalid choice. Please enter Rock, Paper, or Scissors.");
-        }
+    }
+    class HumanPlayer : IPlayer
+    {
+        public string Name { get; set; }
+        public RPSChoice Choice { get; set; }
+        public int Score { get; set; }
+    }
+    class ComputerPlayer : IPlayer
+    {
+        public string Name { get; set; }
+        public RPSChoice Choice { get; set; }
+        public int Score { get; set; }
     }
 
-    class Game
+    class RPSCalculator
     {
-        public IPlayer player1 { get; set; }
-        public IPlayer player2 { get; set; }
-        public void Start()
+        public static RPSChoice? GetWinner(RPSChoice choice1, RPSChoice choice2)
         {
-            UI.DisplayChoices();
-            player1.GetChoice();
-            player2.GetChoice();
-            UI.DisplayMessage("Player 1 chose: " + player1.choice);
-            UI.DisplayMessage("Player 2 chose: " + player2.choice);
-            if (player1.choice == player2.choice)
+            if (choice1 == choice2)
             {
-                UI.DisplayMessage("It's a tie!");
+                return null;
             }
-            else if (player1.choice == RPSChoice.Rock && player2.choice == RPSChoice.Scissors)
+            else if (choice1 == RPSChoice.Rock && choice2 == RPSChoice.Scissors)
             {
-                UI.DisplayMessage("Player 1 wins!");
+                return choice1;
             }
-            else if (player1.choice == RPSChoice.Paper && player2.choice == RPSChoice.Rock)
+            else if (choice1 == RPSChoice.Paper && choice2 == RPSChoice.Rock)
             {
-                UI.DisplayMessage("Player 1 wins!");
+                return choice1;
             }
-            else if (player1.choice == RPSChoice.Scissors && player2.choice == RPSChoice.Paper)
+            else if (choice1 == RPSChoice.Scissors && choice2 == RPSChoice.Paper)
             {
-                UI.DisplayMessage("Player 1 wins!");
+                return choice1;
             }
             else
             {
-                UI.DisplayMessage("Player 2 wins!");
+                return choice2;
             }
         }
     }
-    class Program
+
+
+public class Program{
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
+        Console.WriteLine("Welcome to Rock Paper Scissors!");
+        Console.WriteLine("Please enter your name: ");
+        var name = Console.ReadLine();
+        var humanPlayer = new HumanPlayer { Name = name };
+        var computerPlayer = new ComputerPlayer { Name = "Computer" };
+        var players = new List<IPlayer> { humanPlayer, computerPlayer };
+
+        while (true)
         {
-            Game game = new Game();
-            game.player1 = new Human();
-            game.player2 = new Computer();
-            game.Start();
+            Console.WriteLine("Please choose Rock, Paper, or Scissors");
+            var input = Console.ReadLine();
+            var humanChoice = GetHumanChoice(input);
+            if (humanChoice == null)
+            {
+                Console.WriteLine("Invalid input");
+                continue;
+            }
+            humanPlayer.Choice = humanChoice.Value;
+            var computerChoice = GetComputerChoice();
+            computerPlayer.Choice = computerChoice;
+            var winner = RPSCalculator.GetWinner(humanChoice.Value, computerChoice);
+            if (winner == null)
+            {
+                Console.WriteLine("It's a tie!");
+            }
+            else if (winner == humanChoice)
+            {
+                Console.WriteLine($"{humanPlayer.Name} wins!");
+                humanPlayer.Score++;
+            }
+            else
+            {
+                Console.WriteLine($"{computerPlayer.Name} wins!");
+                computerPlayer.Score++;
+            }
+            Console.WriteLine($"{humanPlayer.Name}: {humanPlayer.Score}");
+            Console.WriteLine($"{computerPlayer.Name}: {computerPlayer.Score}");
+            Console.WriteLine("Play again? (Y/N)");
+            var playAgain = Console.ReadLine();
+            if (playAgain.ToUpper() != "Y")
+            {
+                break;
+            }
         }
     }
+    static RPSChoice? GetHumanChoice(string input)
+    {
+        input = input.ToLower();
+        if (input == "rock")
+        {
+            return RPSChoice.Rock;
+        }
+        else if (input == "paper")
+        {
+            return RPSChoice.Paper;
+        }
+        else if (input == "scissors")
+        {
+            return RPSChoice.Scissors;
+        }
+        else
+        {
+            return null;
+        }
+    }
+    static RPSChoice GetComputerChoice()
+    {
+        var values = Enum.GetValues(typeof(RPSChoice));
+        var random = new Random();
+        var randomChoice = (RPSChoice)values.GetValue(random.Next(values.Length));
+        return randomChoice;
+    }
+}
+
+
+
+
 }
